@@ -1,6 +1,7 @@
 package db
 
 import (
+	"database/sql"
 	"fmt"
 	"os"
 
@@ -10,8 +11,17 @@ import (
 
 func Setup() {
 	config := loadDbConf()
+	conStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
+		config["host"], config["port"], config["user"], config["password"], config["dbname"], config["sslmode"])
+	db, err := sql.Open("postgres", conStr)
+	errorCatch(err)
 
-	fmt.Println(config)
+	defer db.Close()
+
+	err = db.Ping()
+	errorCatch(err)
+
+	fmt.Println("Connected to database!")
 }
 
 func loadDbConf() map[string]interface{} {
