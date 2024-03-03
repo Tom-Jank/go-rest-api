@@ -12,5 +12,6 @@ func main() {
 	db.Setup()
 	router := gin.Default()
 	routes.HelloRoute(router)
+	routes.MonkeRoute(router)
 	http.ListenAndServe(":8080", router)
 }

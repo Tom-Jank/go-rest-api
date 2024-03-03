@@ -3,22 +3,26 @@ package db
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"os"
 
+	"github.com/Tom-Jank/go-rest-api/data/models"
 	_ "github.com/lib/pq"
 	"gopkg.in/yaml.v3"
 )
 
+var database *sql.DB
+
 func Setup() {
+	var err error
+
 	config := loadDbConf()
 	conStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
 		config["host"], config["port"], config["user"], config["password"], config["dbname"], config["sslmode"])
-	db, err := sql.Open("postgres", conStr)
+	database, err = sql.Open("postgres", conStr)
 	errorCatch(err)
 
-	defer db.Close()
-
-	err = db.Ping()
+	err = database.Ping()
 	errorCatch(err)
 
 	fmt.Println("Connected to database!")
@@ -33,6 +37,28 @@ func loadDbConf() map[string]interface{} {
 	errorCatch(err)
 
 	return config
+}
+
+func GetAllMonke() []models.Monke {
+	rows, err := database.Query(`select id, monke_name, gender, stand from baboon`)
+
+	if err != nil {
+		log.Fatal("DUPA DUPA", err)
+	}
+
+	defer rows.Close()
+
+	var monkes []models.Monke
+
+	for rows.Next() {
+		var m models.Monke
+		err := rows.Scan(&m.ID, &m.Name, &m.Gender, &m.Stand)
+		errorCatch(err)
+		monkes = append(monkes, m)
+	}
+
+	fmt.Println(monkes)
+	return monkes
 }
 
 func errorCatch(err error) {
