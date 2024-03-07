@@ -1,41 +1,32 @@
 package routes
 
 import (
+	"net/http"
+
 	"github.com/Tom-Jank/go-rest-api/data/db"
+	"github.com/Tom-Jank/go-rest-api/data/models"
 	"github.com/gin-gonic/gin"
 )
-
-func HelloRoute(route *gin.Engine) {
-	hello := route.Group("/greeting")
-	{
-		hello.GET("/hello", helloResponseHandler)
-		hello.GET("/goodmorning", goodmorningResponseHandler)
-	}
-}
 
 func MonkeRoute(route *gin.Engine) {
 	monke := route.Group("/monke")
 	{
-		monke.GET("/all", monkeAllResponseHandler)
+		monke.GET("", findAllResponseHandler)
+		monke.POST("", createNewResponseHandler)
 	}
 }
 
-func helloResponseHandler(c *gin.Context) {
-	c.JSON(200, gin.H{
-		"message": "hello",
-	})
+func findAllResponseHandler(c *gin.Context) {
+	monkes := db.GetAllMonke()
+
+	c.IndentedJSON(http.StatusOK, monkes)
 }
 
-func goodmorningResponseHandler(c *gin.Context) {
-	c.JSON(200, gin.H{
-		"message": "goodmorning",
-	})
-}
+func createNewResponseHandler(c *gin.Context) {
+	var newMonke models.Monke
 
-func monkeAllResponseHandler(c *gin.Context) {
-	query := db.GetAllMonke()
+	if err := c.BindJSON(&newMonke); err != nil {
+		return
+	}
 
-	c.JSON(200, gin.H{
-		"message": query,
-	})
 }
