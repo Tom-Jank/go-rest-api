@@ -9,6 +9,5 @@ func UserRoutes(route *gin.Engine) {
     user := route.Group("/user")
     {
         user.GET("", handlers.FindAllUsersResponseHandler)
-        user.POST("", handlers.AddUserRequestHandler)
     }
 }

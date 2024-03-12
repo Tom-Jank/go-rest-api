@@ -1,7 +1,9 @@
 package db
 
 import (
+	"fmt"
 	"log"
+	"os"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -14,13 +16,20 @@ var (
 
 func Setup() {
     var err error
-    dsn := "host=localhost user=postgres password=postgres dbname=postgres port=5432 sslmode=disable"
-    DBCon, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
-    catchError(err)
+    dsn := fmt.Sprintf(
+        "host=%s user=%s password=%s dbname=%s port=%s sslmode=%s",
+        os.Getenv("DB_HOST"),
+        os.Getenv("DB_USER"),
+        os.Getenv("DB_PASSWD"),
+        os.Getenv("DB_NAME"),
+        os.Getenv("DB_PORT"),
+        os.Getenv("DB_SSL"))
+    DBCon, err = gorm.Open(postgres.Open(dsn), &gorm.Config{TranslateError: true})
+    catchConnectionError(err)
     log.Print("Connected to db")
 }
 
-func catchError(err error) {
+func catchConnectionError(err error) {
     if err != nil {
         log.Panic("Error connenting to db", err)
     }
