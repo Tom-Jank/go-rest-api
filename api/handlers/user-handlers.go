@@ -1,9 +1,9 @@
 package handlers
 
 import (
-	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/Tom-Jank/go-rest-api/data/db"
 	"github.com/gin-gonic/gin"
@@ -15,24 +15,37 @@ type User struct {
     Name string
 }
 
-func FindAllUsersResponseHandler(c *gin.Context) {
+func FindAll(c *gin.Context) {
     result,err := findAllUsers(db.DBCon)
     if err != nil {
         log.Panic("Error fetching users", err)
     }
-
     c.IndentedJSON(http.StatusOK, result)
 }
 
-func AddUserRequestHandler(c *gin.Context) {
+func AddNew(c *gin.Context) {
     var user User
-    err := c.Bind(&user)
-    if err != nil {
-        fmt.Print("nah")
+    if err := c.ShouldBindJSON(&user); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+        return
     }
-    result := addUser(&user, db.DBCon) 
-    handleCreationErr(result, c)
-    
+    if err := addUser(&user, db.DBCon); err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
+        return
+    }
+    c.IndentedJSON(http.StatusOK, user)
+}
+
+func FindByID(c *gin.Context) {
+    ID, err := strconv.ParseUint(c.Param("id"), 10, 64)
+    if err != nil {
+        c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "Provided bad ID"})
+    }
+    user, err := findUserByID(uint(ID), db.DBCon)
+    if err != nil {
+        c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "Provided bad ID"})
+    } 
+    c.IndentedJSON(http.StatusOK, gin.H{"success": user})
 }
 
 func findAllUsers(db *gorm.DB) ([]User, error) {
@@ -43,18 +56,16 @@ func findAllUsers(db *gorm.DB) ([]User, error) {
     return users, nil 
 }
 
-func addUser(user *User, db *gorm.DB) *gorm.DB {
-    return db.Create(user)
+func findUserByID(ID uint, db *gorm.DB) (User, error) {
+    var user User
+    if err := db.First(&user, ID).Error; err != nil {
+        return user, err
+    }
+    return user, nil
 }
 
-func handleCreationErr(result *gorm.DB, c *gin.Context) {
-    if result.Error != nil {
-        switch result.Error {
-        case gorm.ErrDuplicatedKey:
-            c.IndentedJSON(http.StatusBadRequest, "User with same Id already exists")
-        }
-    } else {
-        c.IndentedJSON(http.StatusOK, "created")
-    }
+func addUser(user *User, db *gorm.DB) error {
+    result := db.Create(user)
+    return result.Error
 }
 

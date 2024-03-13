@@ -8,7 +8,8 @@ import (
 func UserRoutes(route *gin.Engine) {
     user := route.Group("/user")
     {
-        user.GET("", handlers.FindAllUsersResponseHandler)
-        user.POST("", handlers.AddUserRequestHandler)
+        user.GET("", handlers.FindAll)
+        user.GET("/:id", handlers.FindByID)
+        user.POST("", handlers.AddNew)
     }
 }
